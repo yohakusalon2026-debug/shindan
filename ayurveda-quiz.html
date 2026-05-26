@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>アーユルヴェーダ体質診断</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --vata: #7B9EA6;
+    --pitta: #C4603C;
+    --kapha: #6B8C5A;
+    --gold: #C9A84C;
+    --cream: #FAF6EE;
+    --dark: #1C1812;
+    --parchment: #F2EAD8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Serif JP', serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== SCREEN SYSTEM ===== */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ===== MANDALA BACKGROUND ===== */
+  .mandala-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    overflow: hidden;
+  }
+  .mandala-bg svg {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+    animation: mandalaRotate 60s linear infinite;
+    opacity: 0.06; width: 110vmax; height: 110vmax;
+  }
+  @keyframes mandalaRotate { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+  /* ===== TOP / INTRO SCREEN ===== */
+  #screen-intro {
+    background: linear-gradient(160deg, #1C1812 0%, #2E2416 60%, #1C1812 100%);
+    color: var(--cream);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 28px;
+    position: relative;
+  }
+
+  .intro-ornament {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .intro-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(38px, 10vw, 56px);
+    font-weight: 300;
+    line-height: 1.15;
+    letter-spacing: 0.05em;
+    color: var(--cream);
+    margin-bottom: 8px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+  }
+
+  .intro-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .intro-subtitle {
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: rgba(250,246,238,0.55);
+    margin-bottom: 36px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+  }
+
+  .tridosha-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 40px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+
+  .dosha-pill {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+
+  .dosha-icon {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+
+  .dosha-icon.vata { background: rgba(123,158,166,0.2); }
+  .dosha-icon.pitta { background: rgba(196,96,60,0.2); }
+  .dosha-icon.kapha { background: rgba(107,140,90,0.2); }
+
+  .dosha-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+  }
+
+  .intro-desc {
+    font-size: 13.5px;
+    line-height: 2;
+    color: rgba(250,246,238,0.7);
+    max-width: 320px;
+    margin: 0 auto 44px;
+    opacity: 0;
+    animation: fadeUp 0.8s 1s forwards;
+  }
+
+  .btn-start {
+    display: inline-block;
+    padding: 16px 48px;
+    background: linear-gradient(135deg, var(--gold), #E8C96B);
+    color: var(--dark);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    border: none;
+    border-radius: 60px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    opacity: 0;
+    animation: fadeUp 0.8s 1.2s forwards;
+    box-shadow: 0 4px 24px rgba(201,168,76,0.35);
+  }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(201,168,76,0.5); }
+  .btn-start:active { transform: scale(0.97); }
+
+  /* ===== QUIZ SCREEN ===== */
+  #screen-quiz {
+    background: var(--cream);
+    padding: 0;
+  }
+
+  .quiz-header {
+    background: var(--dark);
+    padding: 20px 24px 16px;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .quiz-q-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: rgba(250,246,238,0.15);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #E8C96B);
+    border-radius: 2px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .quiz-body {
+    flex: 1;
+    padding: 32px 24px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .question-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    margin-bottom: 14px;
+  }
+
+  .question-text {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.7;
+    color: var(--dark);
+    margin-bottom: 32px;
+    min-height: 80px;
+  }
+
+  .options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .option-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    background: white;
+    border: 1.5px solid #E8E0D0;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    font-family: 'Noto Serif JP', serif;
+  }
+
+  .option-btn:hover {
+    border-color: var(--gold);
+    background: #FDFBF5;
+    transform: translateX(4px);
+  }
+
+  .option-btn.selected {
+    border-color: var(--gold);
+    background: linear-gradient(135deg, #FDFBF5, #FAF3E0);
+    box-shadow: 0 2px 12px rgba(201,168,76,0.2);
+  }
+
+  .option-marker {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid #D4C9B0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    color: #9A9080;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.2s;
+  }
+
+  .option-btn.selected .option-marker {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: white;
+  }
+
+  .option-text {
+    font-size: 14px;
+    line-height: 1.65;
+    color: #3A3328;
+  }
+
+  .quiz-nav {
+    padding: 16px 24px 28px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .btn-back {
+    padding: 14px 24px;
+    background: transparent;
+    border: 1.5px solid #D4C9B0;
+    border-radius: 60px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    color: #7A7060;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { border-color: var(--dark); color: var(--dark); }
+
+  .btn-next {
+    flex: 1;
+    padding: 14px;
+    background: var(--dark);
+    border: none;
+    border-radius: 60px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .btn-next.enabled {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .btn-next.enabled:hover { background: #2E2416; transform: translateY(-1px); }
+
+  /* ===== RESULT SCREEN ===== */
+  #screen-result {
+    align-items: stretch;
+  }
+
+  .result-hero {
+    padding: 52px 28px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-hero.vata { background: linear-gradient(160deg, #1C2830, #2D4550, #1C2830); }
+  .result-hero.pitta { background: linear-gradient(160deg, #2C1A12, #4A2515, #2C1A12); }
+  .result-hero.kapha { background: linear-gradient(160deg, #141E12, #243520, #141E12); }
+
+  .result-dosha-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    display: block;
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.4) rotate(-10deg); opacity: 0; }
+    to { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .result-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    margin-bottom: 10px;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.3s forwards;
+  }
+
+  .result-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 52px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--cream);
+    margin-bottom: 6px;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.5s forwards;
+  }
+
+  .result-element {
+    font-size: 13px;
+    color: rgba(250,246,238,0.55);
+    letter-spacing: 0.2em;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.7s forwards;
+  }
+
+  .result-keyword-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.9s forwards;
+  }
+
+  .keyword-tag {
+    padding: 5px 14px;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 20px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+  }
+
+  .result-body {
+    padding: 32px 24px 40px;
+    background: var(--cream);
+  }
+
+  .score-section {
+    margin-bottom: 32px;
+  }
+
+  .score-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: #9A9080;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .score-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .score-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    width: 52px;
+    color: var(--dark);
+  }
+
+  .score-track {
+    flex: 1;
+    height: 8px;
+    background: #EAE4D8;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.4,0,0.2,1);
+    width: 0;
+  }
+
+  .score-fill.vata { background: linear-gradient(90deg, var(--vata), #9BBFC8); }
+  .score-fill.pitta { background: linear-gradient(90deg, var(--pitta), #D47255); }
+  .score-fill.kapha { background: linear-gradient(90deg, var(--kapha), #8BAF78); }
+
+  .score-pct {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    width: 36px;
+    text-align: right;
+    color: #7A7060;
+  }
+
+  .divider {
+    width: 48px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 28px auto;
+  }
+
+  .desc-section { margin-bottom: 28px; }
+
+  .desc-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: var(--dark);
+    margin-bottom: 12px;
+    padding-left: 12px;
+    border-left: 2px solid var(--gold);
+  }
+
+  .desc-text {
+    font-size: 14px;
+    line-height: 2;
+    color: #4A4035;
+  }
+
+  .advice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .advice-card {
+    padding: 16px;
+    border-radius: 12px;
+    background: white;
+    border: 1px solid #EAE4D8;
+  }
+
+  .advice-card-icon { font-size: 22px; margin-bottom: 6px; display: block; }
+  .advice-card-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: #9A9080;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .advice-card-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--dark);
+  }
+
+  .btn-retry {
+    display: block;
+    width: 100%;
+    margin-top: 32px;
+    padding: 16px;
+    background: transparent;
+    border: 1.5px solid #D4C9B0;
+    border-radius: 60px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    color: #7A7060;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .btn-retry:hover { border-color: var(--dark); color: var(--dark); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== QUESTION TRANSITION ===== */
+  .quiz-body.slide-out {
+    animation: slideOut 0.25s forwards;
+  }
+  .quiz-body.slide-in {
+    animation: slideIn 0.3s forwards;
+  }
+  @keyframes slideOut {
+    to { opacity: 0; transform: translateX(-20px); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Mandala BG -->
+<div class="mandala-bg">
+  <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="90" stroke="#C9A84C" stroke-width="0.5"/>
+    <circle cx="100" cy="100" r="75" stroke="#C9A84C" stroke-width="0.3"/>
+    <circle cx="100" cy="100" r="60" stroke="#C9A84C" stroke-width="0.5"/>
+    <circle cx="100" cy="100" r="45" stroke="#C9A84C" stroke-width="0.3"/>
+    <circle cx="100" cy="100" r="30" stroke="#C9A84C" stroke-width="0.5"/>
+    <circle cx="100" cy="100" r="15" stroke="#C9A84C" stroke-width="0.3"/>
+    <g stroke="#C9A84C" stroke-width="0.4">
+      <line x1="100" y1="10" x2="100" y2="190"/>
+      <line x1="10" y1="100" x2="190" y2="100"/>
+      <line x1="22" y1="22" x2="178" y2="178"/>
+      <line x1="178" y1="22" x2="22" y2="178"/>
+      <line x1="55" y1="10" x2="55" y2="190"/>
+      <line x1="145" y1="10" x2="145" y2="190"/>
+      <line x1="10" y1="55" x2="190" y2="55"/>
+      <line x1="10" y1="145" x2="190" y2="145"/>
+    </g>
+    <g fill="#C9A84C" opacity="0.5">
+      <circle cx="100" cy="10" r="2"/>
+      <circle cx="100" cy="190" r="2"/>
+      <circle cx="10" cy="100" r="2"/>
+      <circle cx="190" cy="100" r="2"/>
+      <circle cx="22" cy="22" r="2"/>
+      <circle cx="178" cy="22" r="2"/>
+      <circle cx="22" cy="178" r="2"/>
+      <circle cx="178" cy="178" r="2"/>
+    </g>
+  </svg>
+</div>
+
+<!-- INTRO SCREEN -->
+<div class="screen active" id="screen-intro">
+  <div class="intro-ornament">✦ Ayurveda Dosha Quiz ✦</div>
+  <h1 class="intro-title">あなたの<br><em>体質</em>を<br>知る</h1>
+  <p class="intro-subtitle">PRAKRITI ANALYSIS</p>
+
+  <div class="tridosha-row">
+    <div class="dosha-pill">
+      <div class="dosha-icon vata">🌬️</div>
+      <span class="dosha-label">Vāta</span>
+    </div>
+    <div class="dosha-pill">
+      <div class="dosha-icon pitta">🔥</div>
+      <span class="dosha-label">Pitta</span>
+    </div>
+    <div class="dosha-pill">
+      <div class="dosha-icon kapha">🌿</div>
+      <span class="dosha-label">Kapha</span>
+    </div>
+  </div>
+
+  <p class="intro-desc">
+    アーユルヴェーダの三つのドーシャから、あなた本来の体質（プラクリティ）を探る10の質問。
+  </p>
+
+  <button class="btn-start" onclick="startQuiz()">診断を始める</button>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div class="screen" id="screen-quiz">
+  <div class="quiz-header">
+    <div class="quiz-q-label" id="q-label">QUESTION 1 / 10</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:10%"></div>
+    </div>
+  </div>
+
+  <div class="quiz-body" id="quiz-body">
+    <div class="question-number" id="question-number">質問 1</div>
+    <div class="question-text" id="question-text"></div>
+    <div class="options-grid" id="options-grid"></div>
+  </div>
+
+  <div class="quiz-nav">
+    <button class="btn-back" id="btn-back" onclick="prevQuestion()">← 戻る</button>
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">次へ →</button>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="screen" id="screen-result">
+  <div class="result-hero" id="result-hero">
+    <span class="result-dosha-icon" id="result-icon"></span>
+    <div class="result-sub">YOUR DOSHA TYPE</div>
+    <div class="result-name" id="result-name"></div>
+    <div class="result-element" id="result-element"></div>
+    <div class="result-keyword-row" id="result-keywords"></div>
+  </div>
+
+  <div class="result-body">
+    <div class="score-section">
+      <div class="score-title">— DOSHA BALANCE —</div>
+      <div class="score-bar-wrap">
+        <div class="score-row">
+          <div class="score-label">Vāta</div>
+          <div class="score-track"><div class="score-fill vata" id="bar-vata"></div></div>
+          <div class="score-pct" id="pct-vata">0%</div>
+        </div>
+        <div class="score-row">
+          <div class="score-label">Pitta</div>
+          <div class="score-track"><div class="score-fill pitta" id="bar-pitta"></div></div>
+          <div class="score-pct" id="pct-pitta">0%</div>
+        </div>
+        <div class="score-row">
+          <div class="score-label">Kapha</div>
+          <div class="score-track"><div class="score-fill kapha" id="bar-kapha"></div></div>
+          <div class="score-pct" id="pct-kapha">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="desc-section">
+      <div class="desc-title" id="desc-title"></div>
+      <p class="desc-text" id="desc-text"></p>
+    </div>
+
+    <div class="desc-section">
+      <div class="desc-title">バランスを整えるヒント</div>
+      <div class="advice-grid" id="advice-grid"></div>
+    </div>
+
+    <button class="btn-retry" onclick="retryQuiz()">🔄 もう一度診断する</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    text: "あなたの体型や体格は？",
+    options: [
+      { text: "細身で骨張っており、体重が増えにくい", dosha: "V" },
+      { text: "中程度の体格で、筋肉質な傾向がある", dosha: "P" },
+      { text: "がっしりしていて、体重が増えやすい", dosha: "K" }
+    ]
+  },
+  {
+    text: "肌の質感はどうですか？",
+    options: [
+      { text: "乾燥しやすく、ザラつきや荒れが気になる", dosha: "V" },
+      { text: "油っぽく、ニキビや炎症が出やすい", dosha: "P" },
+      { text: "しっとりして滑らかだが、くすみやすい", dosha: "K" }
+    ]
+  },
+  {
+    text: "睡眠のパターンは？",
+    options: [
+      { text: "浅く、不規則で目が覚めやすい", dosha: "V" },
+      { text: "短くてもすっきり目覚めることが多い", dosha: "P" },
+      { text: "深くよく眠れるが、起きるのがつらい", dosha: "K" }
+    ]
+  },
+  {
+    text: "ストレス下でどんな反応が出やすい？",
+    options: [
+      { text: "不安・心配・パニックを感じやすい", dosha: "V" },
+      { text: "イライラ・怒り・批判的になりやすい", dosha: "P" },
+      { text: "引きこもる・無気力・食べすぎる", dosha: "K" }
+    ]
+  },
+  {
+    text: "身体的な不調で出やすいのは？",
+    options: [
+      { text: "便秘・関節痛・冷え・乾燥", dosha: "V" },
+      { text: "炎症・発疹・胸焼け・頭痛", dosha: "P" },
+      { text: "体重増加・むくみ・鼻づまり・だるさ", dosha: "K" }
+    ]
+  }
+];
+
+const doshaData = {
+  V: {
+    name: "Vāta",
+    icon: "🌬️",
+    element: "風 + 空 ｜ Air & Space",
+    keywords: ["創造的", "自由奔放", "敏感", "変化好き"],
+    heroClass: "vata",
+    title: "ヴァータ体質の特徴",
+    desc: "ヴァータは「風」と「空」のエネルギーを持ちます。創造的で活発、発想が豊かで変化を愛する一方、不規則になりやすく、不安や乾燥、冷えの影響を受けやすい体質です。温かく、規則正しい生活があなたを整えます。",
+    advice: [
+      { icon: "🍲", label: "食事", text: "温かく油分のある食事。根菜・スープが◎" },
+      { icon: "🧘", label: "習慣", text: "規則正しいリズム。毎日同じ時間に就寝" },
+      { icon: "💆", label: "ケア", text: "ゴマ油でのアビヤンガ（自己マッサージ）" },
+      { icon: "🌸", label: "避ける", text: "冷たい飲食・過剰な刺激・夜更かし" }
+    ]
+  },
+  P: {
+    name: "Pitta",
+    icon: "🔥",
+    element: "火 + 水 ｜ Fire & Water",
+    keywords: ["情熱的", "知性的", "リーダー気質", "完璧主義"],
+    heroClass: "pitta",
+    title: "ピッタ体質の特徴",
+    desc: "ピッタは「火」と「水」のエネルギー。知性と情熱にあふれ、目標に向かう強い意志を持ちます。過剰になると炎症・怒り・燃え尽きとして現れやすいため、冷却と休息がバランスの鍵です。",
+    advice: [
+      { icon: "🥗", label: "食事", text: "冷ます食材を。生野菜・ハーブ・ダール" },
+      { icon: "🌙", label: "習慣", text: "競争より協調。瞑想・自然の中で過ごす" },
+      { icon: "🌿", label: "ケア", text: "ココナッツオイルで頭皮と体を冷やす" },
+      { icon: "🌶", label: "避ける", text: "辛い食事・アルコール・過労・日差し" }
+    ]
+  },
+  K: {
+    name: "Kapha",
+    icon: "🌿",
+    element: "地 + 水 ｜ Earth & Water",
+    keywords: ["安定感", "包容力", "忍耐強い", "穏やか"],
+    heroClass: "kapha",
+    title: "カパ体質の特徴",
+    desc: "カパは「地」と「水」のエネルギー。安定していて思いやり深く、免疫力が高い傾向があります。過剰になると停滞・体重増加・うつ感が現れやすいため、刺激と運動でエネルギーを動かすことが大切です。",
+    advice: [
+      { icon: "🌶", label: "食事", text: "軽く刺激的な食事。スパイス・苦味が◎" },
+      { icon: "🏃", label: "習慣", text: "活動的な運動。朝の早起き・変化を楽しむ" },
+      { icon: "🛁", label: "ケア", text: "乾式マッサージ（ガルシャナ）で循環促進" },
+      { icon: "🍰", label: "避ける", text: "過食・昼寝・重い食材・同じルーティン" }
+    ]
+  }
+};
+
+let answers = {};
+let currentQ = 0;
+let scores = { V: 0, P: 0, K: 0 };
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function startQuiz() {
+  currentQ = 0;
+  answers = {};
+  scores = { V: 0, P: 0, K: 0 };
+  renderQuestion();
+  showScreen('screen-quiz');
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  const total = questions.length;
+
+  document.getElementById('q-label').textContent = `QUESTION ${currentQ + 1} / ${total}`;
+  document.getElementById('progress-fill').style.width = `${((currentQ + 1) / total) * 100}%`;
+  document.getElementById('question-number').textContent = `質問 ${currentQ + 1}`;
+  document.getElementById('question-text').textContent = q.text;
+
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+
+  const labels = ['A', 'B', 'C'];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn' + (answers[currentQ] === i ? ' selected' : '');
+    btn.innerHTML = `
+      <div class="option-marker">${labels[i]}</div>
+      <div class="option-text">${opt.text}</div>
+    `;
+    btn.onclick = () => selectOption(i);
+    grid.appendChild(btn);
+  });
+
+  const btnBack = document.getElementById('btn-back');
+  btnBack.style.display = currentQ === 0 ? 'none' : 'block';
+
+  updateNextBtn();
+}
+
+function selectOption(i) {
+  answers[currentQ] = i;
+  document.querySelectorAll('.option-btn').forEach((b, j) => {
+    b.classList.toggle('selected', j === i);
+  });
+  updateNextBtn();
+}
+
+function updateNextBtn() {
+  const btn = document.getElementById('btn-next');
+  const hasAnswer = answers[currentQ] !== undefined;
+  btn.classList.toggle('enabled', hasAnswer);
+  btn.textContent = currentQ === questions.length - 1 ? '結果を見る ✦' : '次へ →';
+}
+
+function nextQuestion() {
+  if (answers[currentQ] === undefined) return;
+
+  const dosha = questions[currentQ].options[answers[currentQ]].dosha;
+  scores[dosha] = (scores[dosha] || 0) + 1;
+
+  if (currentQ < questions.length - 1) {
+    const body = document.getElementById('quiz-body');
+    body.classList.add('slide-out');
+    setTimeout(() => {
+      body.classList.remove('slide-out');
+      currentQ++;
+      renderQuestion();
+      body.classList.add('slide-in');
+      setTimeout(() => body.classList.remove('slide-in'), 300);
+    }, 250);
+  } else {
+    showResult();
+  }
+}
+
+function prevQuestion() {
+  if (currentQ > 0) {
+    const prevDosha = questions[currentQ].options[answers[currentQ]]?.dosha;
+    if (prevDosha) scores[prevDosha] = Math.max(0, (scores[prevDosha] || 0) - 1);
+    currentQ--;
+    renderQuestion();
+  }
+}
+
+function showResult() {
+  const total = Object.values(scores).reduce((a, b) => a + b, 0) || 1;
+  const dominant = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+  const data = doshaData[dominant];
+
+  // Hero
+  document.getElementById('result-hero').className = `result-hero ${data.heroClass}`;
+  document.getElementById('result-icon').textContent = data.icon;
+  document.getElementById('result-name').textContent = data.name;
+  document.getElementById('result-element').textContent = data.element;
+
+  const kwRow = document.getElementById('result-keywords');
+  kwRow.innerHTML = data.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('');
+
+  // Score bars
+  setTimeout(() => {
+    ['V', 'P', 'K'].forEach(d => {
+      const pct = Math.round((scores[d] / total) * 100);
+      const key = d === 'V' ? 'vata' : d === 'P' ? 'pitta' : 'kapha';
+      document.getElementById(`bar-${key}`).style.width = `${pct}%`;
+      document.getElementById(`pct-${key}`).textContent = `${pct}%`;
+    });
+  }, 300);
+
+  // Description
+  document.getElementById('desc-title').textContent = data.title;
+  document.getElementById('desc-text').textContent = data.desc;
+
+  // Advice
+  const grid = document.getElementById('advice-grid');
+  grid.innerHTML = data.advice.map(a => `
+    <div class="advice-card">
+      <span class="advice-card-icon">${a.icon}</span>
+      <div class="advice-card-label">${a.label}</div>
+      <div class="advice-card-text">${a.text}</div>
+    </div>
+  `).join('');
+
+  showScreen('screen-result');
+}
+
+function retryQuiz() {
+  startQuiz();
+}
+</script>
+</body>
+</html>
